@@ -1,0 +1,18 @@
+flip_idx:
+- 0
+- 1
+kpt_shape:
+- 2
+- 3
+names:
+- glue
+nc: 1
+roboflow:
+  license: MIT
+  project: glue-stick-runs-dataset-kast9
+  url: https://universe.roboflow.com/renzotest/glue-stick-dataset-kast9/dataset/3
+  version: 3
+  workspace: renzotest
+test: ../test/images
+train: glue-stick-runs-dataset-3/train/images
+val: glue-stick-runs-dataset-3/valid/images
