@@ -1,0 +1,18 @@
+flip_idx:
+- 0
+- 1
+kpt_shape:
+- 2
+- 3
+names:
+- glue-stick
+nc: 1
+roboflow:
+  license: MIT
+  project: glue-stick-project-uilei
+  url: https://universe.roboflow.com/renzotest/glue-stick-project-uilei/dataset/5
+  version: 5
+  workspace: renzotest
+test: test/images
+train: train/images
+val: valid/images

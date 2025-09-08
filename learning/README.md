@@ -33,7 +33,12 @@ Check it has no mention to its parent folder (glue-stick-dataset-4).
 [Iteration 3](./glue-stick-dataset-3/data.yaml) is an example of original downloaded file, having reference to its parent dir and causing the mentioned exception.
 
 
-I was able to run the  trained model present on [glue-stick-runs](./glue-stick-runs). But got no object detection: 
+I was able to run the trained model present on [glue-stick-runs](./glue-stick-runs). But got no object detection:
+
 ![first pose result](first_pose_result.jpg "First Pose Result").  
 
+As a second try I trained the model present on [Glue-Stick-Project-5](./Glue-Stick-Project-5). 
+This one detected the object, but 3 times:
+
+![second pose result](second_pose_result.jpg "Second Pose Result").  
 
