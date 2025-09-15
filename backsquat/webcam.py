@@ -64,26 +64,24 @@ def my_sink(result, video_frame):
         squat_state = new_state
 
         # Draw overlays
-        cv2.putText(frame, f"State: {squat_state}",
-                    (30, 50), cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(frame, f"Reps: {squat_count}",
-                    (30, 100), cv2.FONT_HERSHEY_SIMPLEX,
+                    (30, 30), cv2.FONT_HERSHEY_SIMPLEX,
                     1, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.putText(frame, f"Knee Angle: {int(knee_angle)}",
-                    (30, 150), cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 0), 2, cv2.LINE_AA)
+                    (30, 70), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (255, 255, 0), 2, cv2.LINE_AA)
 
         # If model has bounding box predictions, draw them
         box_preds = result.get("object_detection_predictions")
         if box_preds:
             for box in box_preds:
-                x1, y1, x2, y2 = map(int, box["bbox"])  # depends on workflow output
-                label = box.get("class_name", "person")
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                x1, y1, x2, y2 = map(int, box[0])  # depends on workflow output
+                label = box[5].get("class_name")
+                color = (0, 255, 0) if squat_state == 'up'  else (0, 255, 255)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, f"{label}: {squat_state}",
                             (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                            0.9, (0, 0, 255), 2, cv2.LINE_AA)
+                            0.9, color, 2, cv2.LINE_AA)
 
     # Show live video
     # cv2.imshow("Squat Detection", frame)
@@ -105,7 +103,7 @@ pipeline = InferencePipeline.init_with_workflow(
     api_key=config("ROBOFLOW_API_KEY"),
     workspace_name="renzotest",
     workflow_id="back-squat",
-    video_reference="./PriSquat.mp4",  # input video file
+    video_reference="./RenzoSquat.mp4",  # input video file
     image_input_name="webcam",
     max_fps=30,
     on_prediction=my_sink
