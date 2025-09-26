@@ -4,21 +4,64 @@ import cv2
 from decouple import config
 import numpy as np
 
-SQUAT_DOWN_ANGLE = 73   # knee angle smaller than this = down
-SQUAT_UP_ANGLE = 170    # knee angle larger than this = up
+SQUAT_DOWN_ANGLE = 73  # knee angle smaller than this = down
+SQUAT_UP_ANGLE = 170  # knee angle larger than this = up
 
-squat_state = 'up'
-squat_count = 0
-first_execution = True
+# Knee only state
+MIDDLE_STATE = 'middle'
+
+# Squat only states
+ASCENDING_STATE = 'ascending'
+DESCENDING_STATE = 'descending'
+START_STATE = 'stard'
+
+# Squat and Knee shared states
+UP_STATE = 'up'
+DOWN_STATE = 'down'
+
+SQUAT_STATES_COLORS={
+    UP_STATE: (0, 255, 0),
+    DOWN_STATE: (0, 255, 255),
+    START_STATE: (100, 100, 100),
+    DESCENDING_STATE: (0, 127, 127),
+    ASCENDING_STATE: (0, 127, 0),
+}
+
+# State Variables
+squat_state = START_STATE
+squat_reps = 0
 video_writer = None
 
 
-def detect_squat(knee_angle, current_state):
-    if knee_angle < SQUAT_DOWN_ANGLE and current_state != 'down':
-        return 'down'
-    elif knee_angle > SQUAT_UP_ANGLE and current_state == 'down':
-        return 'up'
-    return current_state
+def detect_knee_state(knee_angle):
+    if knee_angle < SQUAT_DOWN_ANGLE:
+        return DOWN_STATE
+    elif knee_angle > SQUAT_UP_ANGLE:
+        return UP_STATE
+    return MIDDLE_STATE
+
+
+def calculate_squat_state(knee_state):
+    global squat_state, squat_reps
+    if squat_state == START_STATE and knee_state == UP_STATE:
+        print(f"Exercise started")
+        squat_state = UP_STATE
+    elif squat_state == UP_STATE and knee_state == MIDDLE_STATE:
+        squat_state = DESCENDING_STATE
+        print(f"Descending phase")
+    elif squat_state == DESCENDING_STATE and knee_state == DOWN_STATE:
+        squat_state = DOWN_STATE
+        print(f"Descending completed")
+    elif squat_state == DOWN_STATE and knee_state == MIDDLE_STATE:
+        squat_state = ASCENDING_STATE
+        print(f"Ascending phase")
+    elif squat_state == ASCENDING_STATE and knee_state == UP_STATE:
+        squat_state = UP_STATE
+        squat_reps += 1
+        print(f"Rep: {squat_reps}")
+        print("Ascending completed")
+    return squat_state
+
 
 
 def get_keypoints_dict(predictions):
@@ -37,13 +80,9 @@ def angle_between(a, b, c):
 
 
 def my_sink(result, video_frame):
-    global squat_state, squat_count, first_execution, video_writer
+    global video_writer
 
     frame = video_frame.image.copy()
-
-    if first_execution:
-        print("Processing started")
-        first_execution = False
 
     predictions = result.get("keypoint_predictions")
     if predictions and 'person' in predictions.data.get('class_name', []):
@@ -53,18 +92,12 @@ def my_sink(result, video_frame):
             keypoints['left_knee'],
             keypoints['left_ankle']
         )
-        new_state = detect_squat(knee_angle, squat_state)
 
-        if squat_state == 'down' and new_state == 'up':
-            squat_count += 1
-            print(f"Rep: {squat_count}")
-        elif squat_state == 'up' and new_state == 'down':
-            print("Squat Down!")
-
-        squat_state = new_state
+        knee_state = detect_knee_state(knee_angle)
+        calculate_squat_state(knee_state)
 
         # Draw overlays
-        cv2.putText(frame, f"Reps: {squat_count}",
+        cv2.putText(frame, f"Reps: {squat_reps}",
                     (30, 30), cv2.FONT_HERSHEY_SIMPLEX,
                     1, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.putText(frame, f"Knee Angle: {int(knee_angle)}",
@@ -77,7 +110,7 @@ def my_sink(result, video_frame):
             for box in box_preds:
                 x1, y1, x2, y2 = map(int, box[0])  # depends on workflow output
                 label = box[5].get("class_name")
-                color = (0, 255, 0) if squat_state == 'up'  else (0, 255, 255)
+                color = SQUAT_STATES_COLORS[squat_state]
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, f"{label}: {squat_state}",
                             (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX,
