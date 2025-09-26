@@ -135,7 +135,7 @@ def my_sink(result, video_frame):
 pipeline = InferencePipeline.init_with_workflow(
     api_key=config("ROBOFLOW_API_KEY"),
     workspace_name="renzotest",
-    workflow_id="back-squat",
+    workflow_id="person-with-keypoints",
     video_reference="./RenzoSquat.mp4",  # input video file
     image_input_name="webcam",
     max_fps=30,
