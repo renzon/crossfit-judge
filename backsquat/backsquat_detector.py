@@ -3,8 +3,7 @@ from inference import InferencePipeline
 import cv2
 from decouple import config
 
-SQUAT_DOWN_ANGLE = 73  # knee angle smaller than this = down
-SQUAT_UP_ANGLE = 170  # knee angle larger than this = up
+
 
 # Knee only state
 MIDDLE_STATE = 'middle'
@@ -32,14 +31,6 @@ squat_reps = 0
 video_writer = None
 
 
-def detect_knee_state(knee_angle):
-    if knee_angle < SQUAT_DOWN_ANGLE:
-        return DOWN_STATE
-    elif knee_angle > SQUAT_UP_ANGLE:
-        return UP_STATE
-    return MIDDLE_STATE
-
-
 def calculate_squat_state(knee_state):
     global squat_state, squat_reps
     if squat_state == START_STATE and knee_state == UP_STATE:
@@ -62,9 +53,6 @@ def calculate_squat_state(knee_state):
     return squat_state
 
 
-
-
-
 def my_sink(result, video_frame):
     global video_writer
 
@@ -72,7 +60,8 @@ def my_sink(result, video_frame):
 
     knee_angle = result.get("knee_angle")
     if knee_angle is not None:
-        knee_state = detect_knee_state(knee_angle)
+        knee_state = result.get("knee_state")
+        print('knee state:', knee_state)
         calculate_squat_state(knee_state)
 
         # Draw overlays
@@ -114,7 +103,7 @@ def my_sink(result, video_frame):
 pipeline = InferencePipeline.init_with_workflow(
     api_key=config("ROBOFLOW_API_KEY"),
     workspace_name="renzotest",
-    workflow_id="person-with-keypoints",
+    workflow_id="back-squat",
     video_reference="./RenzoSquat.mp4",  # input video file
     image_input_name="webcam",
     max_fps=30,
