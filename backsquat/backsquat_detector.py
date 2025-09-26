@@ -5,8 +5,6 @@ from decouple import config
 
 
 
-# Knee only state
-MIDDLE_STATE = 'middle'
 
 # Squat only states
 ASCENDING_STATE = 'ascending'
@@ -26,31 +24,8 @@ SQUAT_STATES_COLORS={
 }
 
 # State Variables
-squat_state = START_STATE
-squat_reps = 0
 video_writer = None
 
-
-def calculate_squat_state(knee_state):
-    global squat_state, squat_reps
-    if squat_state == START_STATE and knee_state == UP_STATE:
-        print(f"Exercise started")
-        squat_state = UP_STATE
-    elif squat_state == UP_STATE and knee_state == MIDDLE_STATE:
-        squat_state = DESCENDING_STATE
-        print(f"Descending phase")
-    elif squat_state == DESCENDING_STATE and knee_state == DOWN_STATE:
-        squat_state = DOWN_STATE
-        print(f"Descending completed")
-    elif squat_state == DOWN_STATE and knee_state == MIDDLE_STATE:
-        squat_state = ASCENDING_STATE
-        print(f"Ascending phase")
-    elif squat_state == ASCENDING_STATE and knee_state == UP_STATE:
-        squat_state = UP_STATE
-        squat_reps += 1
-        print(f"Rep: {squat_reps}")
-        print("Ascending completed")
-    return squat_state
 
 
 def my_sink(result, video_frame):
@@ -62,7 +37,8 @@ def my_sink(result, video_frame):
     if knee_angle is not None:
         knee_state = result.get("knee_state")
         print('knee state:', knee_state)
-        calculate_squat_state(knee_state)
+        squat_reps = result.get('squat').get("squat_reps")
+        squat_state = result.get('squat').get("squat_state")
 
         # Draw overlays
         cv2.putText(frame, f"Reps: {squat_reps}",
