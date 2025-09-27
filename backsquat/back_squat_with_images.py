@@ -52,11 +52,29 @@ print("Raw result:", result)
 # Parse predictions
 data = result[0]
 
+def calculate_squat_state(previous_squat_state, current_knee_state):
+    if previous_squat_state == START_STATE and current_knee_state == UP_STATE:
+        print(f"Exercise started")
+        return UP_STATE, 0
+    elif previous_squat_state == UP_STATE and current_knee_state == MIDDLE_STATE:
+        print(f"Descending phase")
+        return DESCENDING_STATE, 0
+    elif previous_squat_state == DESCENDING_STATE and current_knee_state == DOWN_STATE:
+        print(f"Descending completed")
+        return DOWN_STATE, 0
+    elif previous_squat_state == DOWN_STATE and current_knee_state == MIDDLE_STATE:
+        print(f"Ascending phase")
+        return ASCENDING_STATE, 0
+    elif previous_squat_state == ASCENDING_STATE and current_knee_state == UP_STATE:
+        print("Ascending completed")
+        return UP_STATE, 1
+    return previous_squat_state, 0
 
-squat_reps = data.get("squat", {}).get("squat_reps", 0)
-squat_state = data.get("squat", {}).get("squat_state", START_STATE)
+
 knee_angle = data.get("knee_angle", -1)
 knee_state = data.get("knee_state", MIDDLE_STATE)
+squat_state, rep_increment = calculate_squat_state(START_STATE, knee_state)
+squat_reps = data.get("squat", {}).get("squat_reps", 0) + rep_increment
 
 print("Knee Angle:", knee_angle)
 print("Squat Reps:", squat_reps)
