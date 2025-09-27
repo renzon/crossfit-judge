@@ -132,24 +132,34 @@ HTML_PAGE="""<!DOCTYPE html>
   <p><b>Knee Angle:</b> <span id="angle">-</span></p>
 
   <script>
-    let squat_state = "start";
-    let squat_reps = 0;
+  let squat_state = "start";
+  let squat_reps = 0;
 
-    const video = document.getElementById('webcam');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+  const video = document.getElementById('webcam');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
 
-    async function setupWebcam() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-    }
+  // Allowed transitions (FSM)
+  const VALID_TRANSITIONS = {
+    "start": ["start", "up"],
+    "up": ["up", "descending"],
+    "descending": ["descending", "down"],
+    "down": ["down", "ascending"],
+    "ascending": ["ascending", "up"]
+  };
 
-    async function sendFrame() {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg");
+  async function setupWebcam() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+  }
 
+  async function sendFrame() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg");
+
+    try {
       const response = await fetch("/process_frame", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,21 +167,28 @@ HTML_PAGE="""<!DOCTYPE html>
       });
 
       const result = await response.json();
-      squat_state = result.squat_state;
-      squat_reps = result.squat_reps;
 
-      document.getElementById("processed").src = result.frame;
-      document.getElementById("reps").innerText = squat_reps;
-      document.getElementById("state").innerText = squat_state;
-      document.getElementById("angle").innerText = result.knee_angle;
+      // Only update if transition is valid
+      // Need to validate because http responses can be get in a different order than requests were sent
+      if (VALID_TRANSITIONS[squat_state].includes(result.squat_state)) {
+        squat_state = result.squat_state;
+        squat_reps = result.squat_reps; // trust server only if state transition is valid
+        document.getElementById("processed").src = result.frame;
+        document.getElementById("reps").innerText = squat_reps;
+        document.getElementById("state").innerText = squat_state;
+        document.getElementById("angle").innerText = result.knee_angle;
+      }
+
+    } catch (err) {
+      console.error("Frame processing failed:", err);
     }
+  }
 
-    setupWebcam().then(() => {
-      setInterval(sendFrame, 200); // ~5 FPS
-    });
-  </script>
-</body>
-</html>"""
+  setupWebcam().then(() => {
+    setInterval(sendFrame, 200); // ~5 FPS
+  });
+</script>
+"""
 
 
 
