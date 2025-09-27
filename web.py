@@ -14,7 +14,7 @@ WORKFLOW_ID = "back-squat"
 
 # Initialize Roboflow HTTP client
 client = InferenceHTTPClient(
-    api_url="http://localhost:9001", # use local inference server
+    api_url=config("INFERENCE_SERVER_URL"), # use local inference server
     api_key=API_KEY
 )
 

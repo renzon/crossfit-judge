@@ -1,1 +1,7 @@
 ROBOFLOW_API_KEY=<your-api-key-here>
+
+# If running on local environment
+#INFERENCE_SERVER_URL=http://localhost:9001
+
+# If running on Roboflow deploy
+INFERENCE_SERVER_URL=https://serverless.roboflow.com
