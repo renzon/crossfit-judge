@@ -2,9 +2,7 @@
 from inference import InferencePipeline
 import cv2
 from decouple import config
-
-
-
+from inference_sdk import InferenceHTTPClient
 
 # Squat only states
 ASCENDING_STATE = 'ascending'
@@ -23,9 +21,16 @@ SQUAT_STATES_COLORS={
     ASCENDING_STATE: (0, 127, 0),
 }
 
+
+client = InferenceHTTPClient(
+    api_url="http://localhost:9001", # use local inference server
+    api_key=config("ROBOFLOW_API_KEY")
+)
+
+
+
 # State Variables
 video_writer = None
-
 
 
 def my_sink(result, video_frame):
@@ -36,9 +41,11 @@ def my_sink(result, video_frame):
     knee_angle = result.get("knee_angle")
     if knee_angle is not None:
         knee_state = result.get("knee_state")
-        print('knee state:', knee_state)
         squat_reps = result.get('squat').get("squat_reps")
         squat_state = result.get('squat').get("squat_state")
+        print('knee state:', knee_state)
+        print('Reps:', squat_reps)
+        print('State:', squat_state)
 
         # Draw overlays
         cv2.putText(frame, f"Reps: {squat_reps}",
@@ -59,9 +66,8 @@ def my_sink(result, video_frame):
                 cv2.putText(frame, f"{label}: {squat_state}",
                             (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX,
                             0.9, color, 2, cv2.LINE_AA)
-
-    # Show live video
-    # cv2.imshow("Squat Detection", frame)
+        if (cv2.waitKey(1) & 0xFF == ord('q')):
+            pipeline.terminate()
 
     # Save video
     if video_writer is None:
@@ -71,8 +77,6 @@ def my_sink(result, video_frame):
     video_writer.write(frame)
 
     # Stop with 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        pipeline.stop()
 
 
 # ----------- MAIN -----------
@@ -80,7 +84,7 @@ pipeline = InferencePipeline.init_with_workflow(
     api_key=config("ROBOFLOW_API_KEY"),
     workspace_name="renzotest",
     workflow_id="back-squat",
-    video_reference="./RenzoSquat.mp4",  # input video file
+    video_reference="./PriSquat.mp4",  # input video file
     image_input_name="webcam",
     max_fps=30,
     on_prediction=my_sink
